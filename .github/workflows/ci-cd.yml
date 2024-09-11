@@ -28,7 +28,7 @@ jobs:
 
       - name: Run tests with Maven
         run: mvn test
-        working-directory: ./Maven-app/my-app/
+        working-directory: ./my-app
 
       - name: Archive JUnit test results
         if: always()
