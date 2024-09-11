@@ -24,13 +24,15 @@ jobs:
 
       - name: Build with Maven
         run: mvn clean package
+        working-directory: ./Maven-app/my-app
 
       - name: Run tests with Maven
         run: mvn test
+        working-directory: ./maven-project
 
       - name: Archive JUnit test results
         if: always()
         uses: actions/upload-artifact@v3
         with:
           name: test-results
-          path: target/surefire-reports/
+          path: maven-project/target/surefire-reports/
