@@ -23,12 +23,16 @@ jobs:
           distribution: 'temurin'
 
       - name: Build with Maven
-        run: mvn clean package
+        run: mvn clean package -X  # -X enables Maven's debug mode to provide detailed logs
         working-directory: ./my-app
 
       - name: Run tests with Maven
         run: mvn test
         working-directory: ./my-app
+
+      - name: List target directory
+        run: ls -al ./my-app/target  # Check if the target directory exists
+        continue-on-error: true  # Ensure the workflow continues even if this step fails
 
       - name: Upload JAR artifact
         uses: actions/upload-artifact@v3
