@@ -45,14 +45,27 @@ jobs:
         with:
           name: my-app-jar
 
-      - name: Deploy to EC2 via SSM
+      - name: Upload JAR to EC2 via SSM
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          INSTANCE_ID: ${{ secrets.EC2_INSTANCE_ID }}
+          INSTANCE_ID: i-0839a8d070763f097
         run: |
+          # Create a temporary directory and copy the JAR file
+          mkdir -p /tmp/my-app
+          cp my-app/target/my-app-1.0-SNAPSHOT.jar /tmp/my-app/
+          
+          # Create an SSM document with the deployment commands
+          DEPLOY_COMMAND=$(cat <<-EOF
+          sudo mkdir -p /opt/my-app
+          sudo cp /tmp/my-app/my-app-1.0-SNAPSHOT.jar /opt/my-app/
+          sudo systemctl restart my-app
+          EOF
+          )
+          
+          # Run the deployment script using SSM
           aws ssm send-command \
             --document-name "AWS-RunShellScript" \
             --targets "Key=instanceids,Values=$INSTANCE_ID" \
-            --parameters 'commands=["aws s3 cp s3://your-bucket/my-app-1.0-SNAPSHOT.jar /home/ec2-user/","sudo systemctl stop my-app","sudo cp /home/ec2-user/my-app-1.0-SNAPSHOT.jar /opt/my-app/","sudo systemctl start my-app"]' \
-            --comment "Deploying application"
+            --parameters 'commands=["'${DEPLOY_COMMAND}'"]' \
+            --comment "Deploying application to EC2 instance"
