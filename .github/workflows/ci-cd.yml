@@ -1,4 +1,4 @@
-name: Maven CI
+name: Maven CI/CD
 
 on:
   push:
@@ -30,13 +30,6 @@ jobs:
         run: mvn test
         working-directory: ./my-app
 
-      - name: Archive JUnit test results
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: test-results
-          path: my-app/target/surefire-reports/
-
       - name: Upload JAR artifact
         uses: actions/upload-artifact@v3
         with:
@@ -52,31 +45,14 @@ jobs:
         with:
           name: my-app-jar
 
-      - name: List downloaded files
-        run: ls -al
-
-      - name: Create SSH Key File
-        run: |
-          echo "$SSH_PRIVATE_KEY" > /tmp/shubh1.pem
-          chmod 600 /tmp/shubh1.pem
-          ls -al /tmp/shubh1.pem
-          cat /tmp/shubh1.pem | head -n 20  # Output the first 20 lines for debugging
-
-      - name: Test SSH Connection
-        run: |
-          ssh -i /tmp/shubh1.pem -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=10 $USER@$HOST "echo SSH connection test successful"
+      - name: Deploy to EC2 via SSM
         env:
-          USER: ${{ secrets.EC2_USER }}
-          HOST: ${{ secrets.EC2_HOST }}
-
-      - name: Deploy to EC2
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          HOST: ${{ secrets.EC2_HOST }}
-          USER: ${{ secrets.EC2_USER }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          INSTANCE_ID: ${{ secrets.EC2_INSTANCE_ID }}
         run: |
-          scp -i /tmp/shubh1.pem -o StrictHostKeyChecking=no my-app-1.0-SNAPSHOT.jar $USER@$HOST:/home/$USER
-          ssh -i /tmp/shubh1.pem -o StrictHostKeyChecking=no $USER@$HOST << 'EOF'
-            sudo cp /home/$USER/my-app-1.0-SNAPSHOT.jar /opt/tomcat/webapps/
-            sudo systemctl restart tomcat
-          EOF
+          aws ssm send-command \
+            --document-name "AWS-RunShellScript" \
+            --targets "Key=instanceids,Values=$INSTANCE_ID" \
+            --parameters 'commands=["aws s3 cp s3://your-bucket/my-app-1.0-SNAPSHOT.jar /home/ec2-user/","sudo systemctl stop my-app","sudo cp /home/ec2-user/my-app-1.0-SNAPSHOT.jar /opt/my-app/","sudo systemctl start my-app"]' \
+            --comment "Deploying application"
