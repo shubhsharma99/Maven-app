@@ -1,4 +1,4 @@
-name: Maven CI
+name: Maven CI/CD Pipeline
 
 on:
   push:
@@ -36,3 +36,9 @@ jobs:
         with:
           name: test-results
           path: my-app/target/surefire-reports/
+
+      - name: Deploy to EC2
+        run: |
+          scp -i C:/Users/v/Downloads/shubh1.pem ./my-app/target/hello-world-1.0-SNAPSHOT.war ec2-user@13.201.131.153:/opt/tomcat/webapps
+        env:
+          PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
