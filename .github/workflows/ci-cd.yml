@@ -52,6 +52,9 @@ jobs:
         with:
           name: my-app-war
 
+      - name: List downloaded files
+        run: ls -al
+
       - name: Deploy to EC2
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
@@ -60,7 +63,7 @@ jobs:
         run: |
           chmod 600 /tmp/ssh_key.pem
           echo "$SSH_PRIVATE_KEY" > /tmp/ssh_key.pem
-          scp -i /tmp/ssh_key.pem -o StrictHostKeyChecking=no hello-world-1.0-SNAPSHOT.war $USER@$HOST:/home/$USER
+          scp -i /tmp/ssh_key.pem -o StrictHostKeyChecking=no my-app-war/hello-world-1.0-SNAPSHOT.war $USER@$HOST:/home/$USER
           ssh -i /tmp/ssh_key.pem -o StrictHostKeyChecking=no $USER@$HOST << 'EOF'
             sudo systemctl stop tomcat
             sudo cp /home/$USER/hello-world-1.0-SNAPSHOT.war /opt/tomcat/webapps/
