@@ -58,17 +58,9 @@ jobs:
       - name: Create SSH Key File
         run: |
           echo "$SSH_PRIVATE_KEY" > /tmp/ssh_key.pem
-          ls -al /tmp/ssh_key.pem  # Verify the file creation
-
-      - name: Set permissions on SSH Key
-        run: |
           chmod 600 /tmp/ssh_key.pem
-          ls -al /tmp/ssh_key.pem  # Verify the permissions
-
-      - name: Debug Environment Variables
-        run: |
-          echo "USER: $USER"
-          echo "HOST: $HOST"
+          ls -al /tmp/ssh_key.pem
+          cat /tmp/ssh_key.pem | head -n 20  # Output the first 20 lines for debugging
 
       - name: Test SSH Connection
         run: |
@@ -85,7 +77,6 @@ jobs:
         run: |
           scp -i /tmp/ssh_key.pem -o StrictHostKeyChecking=no my-app-1.0-SNAPSHOT.jar $USER@$HOST:/home/$USER
           ssh -i /tmp/ssh_key.pem -o StrictHostKeyChecking=no $USER@$HOST << 'EOF'
-            # Replace this with your deployment commands
             sudo cp /home/$USER/my-app-1.0-SNAPSHOT.jar /opt/tomcat/webapps/
             sudo systemctl restart tomcat
           EOF
