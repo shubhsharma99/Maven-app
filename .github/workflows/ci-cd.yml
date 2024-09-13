@@ -42,38 +42,38 @@ jobs:
         with:
           name: my-app-jar
           path: my-app/target/my-app-1.0-SNAPSHOT.jar
-  
+
   deploy:
-  runs-on: ubuntu-latest
-  needs: build
-  steps:
-    - name: Download JAR artifact
-      uses: actions/download-artifact@v3
-      with:
-        name: my-app-jar
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Download JAR artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: my-app-jar
 
-    - name: List downloaded files
-      run: ls -al
+      - name: List downloaded files
+        run: ls -al
 
-    - name: Create SSH Key File
-      run: |
-        echo "$SSH_PRIVATE_KEY" > /tmp/ssh_key.pem
-        ls -al /tmp/ssh_key.pem  # Verify the file creation
+      - name: Create SSH Key File
+        run: |
+          echo "$SSH_PRIVATE_KEY" > /tmp/ssh_key.pem
+          ls -al /tmp/ssh_key.pem  # Verify the file creation
 
-    - name: Set permissions on SSH Key
-      run: |
-        chmod 600 /tmp/ssh_key.pem
-        ls -al /tmp/ssh_key.pem  # Verify the permissions
+      - name: Set permissions on SSH Key
+        run: |
+          chmod 600 /tmp/ssh_key.pem
+          ls -al /tmp/ssh_key.pem  # Verify the permissions
 
-    - name: Deploy to EC2
-      env:
-        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-        HOST: ${{ secrets.EC2_HOST }}
-        USER: ${{ secrets.EC2_USER }}
-      run: |
-        scp -i /tmp/ssh_key.pem -o StrictHostKeyChecking=no my-app-1.0-SNAPSHOT.jar $USER@$HOST:/home/$USER
-        ssh -i /tmp/ssh_key.pem -o StrictHostKeyChecking=no $USER@$HOST << 'EOF'
-          # Replace this with your deployment commands
-          sudo cp /home/$USER/my-app-1.0-SNAPSHOT.jar /opt/tomcat/webapps/
-          sudo systemctl restart tomcat
-        EOF
+      - name: Deploy to EC2
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          HOST: ${{ secrets.EC2_HOST }}
+          USER: ${{ secrets.EC2_USER }}
+        run: |
+          scp -i /tmp/ssh_key.pem -o StrictHostKeyChecking=no my-app-1.0-SNAPSHOT.jar $USER@$HOST:/home/$USER
+          ssh -i /tmp/ssh_key.pem -o StrictHostKeyChecking=no $USER@$HOST << 'EOF'
+            # Replace this with your deployment commands
+            sudo cp /home/$USER/my-app-1.0-SNAPSHOT.jar /opt/tomcat/webapps/
+            sudo systemctl restart tomcat
+          EOF
