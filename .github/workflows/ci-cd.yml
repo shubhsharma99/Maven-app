@@ -23,19 +23,12 @@ jobs:
           distribution: 'temurin'
 
       - name: Build with Maven
-        run: mvn clean package
+        run: mvn clean package -T 2C
         working-directory: ./my-app
 
       - name: Run tests with Maven
         run: mvn test
         working-directory: ./my-app
-
-      - name: Debug project structure after build
-        run: |
-          echo "Listing files in the 'my-app' directory"
-          find ./my-app -type f -name "*.jar"
-          echo "Listing files in the 'my-app/target' directory"
-          ls -al ./my-app/target/
 
       - name: Upload JAR artifact
         uses: actions/upload-artifact@v3
@@ -53,16 +46,12 @@ jobs:
           name: my-app-jar
 
       - name: List downloaded files
-        run: |
-          echo "Listing files in the workspace"
-          ls -al
-          echo "Listing files in the '/tmp/my-app' directory"
-          ls -al /tmp/my-app/
+        run: ls -al
 
       - name: Create temporary directory and copy JAR file
         run: |
           mkdir -p /tmp/my-app
-          mv my-app-1.0-SNAPSHOT.jar /tmp/my-app/
+          cp my-app-1.0-SNAPSHOT.jar /tmp/my-app/
           ls -al /tmp/my-app/
 
       - name: Deploy JAR to EC2 via SSM
