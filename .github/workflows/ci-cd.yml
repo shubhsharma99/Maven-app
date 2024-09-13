@@ -59,16 +59,23 @@ jobs:
         run: |
           echo "$SSH_PRIVATE_KEY" > /tmp/ssh_key.pem
           ls -al /tmp/ssh_key.pem  # Verify the file creation
-          # Do not print key content in logs, remove the `cat` command in production
 
       - name: Set permissions on SSH Key
         run: |
           chmod 600 /tmp/ssh_key.pem
           ls -al /tmp/ssh_key.pem  # Verify the permissions
 
+      - name: Debug Environment Variables
+        run: |
+          echo "USER: $USER"
+          echo "HOST: $HOST"
+
       - name: Test SSH Connection
         run: |
           ssh -i /tmp/ssh_key.pem -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=10 $USER@$HOST "echo SSH connection test successful"
+        env:
+          USER: ${{ secrets.EC2_USER }}
+          HOST: ${{ secrets.EC2_HOST }}
 
       - name: Deploy to EC2
         env:
