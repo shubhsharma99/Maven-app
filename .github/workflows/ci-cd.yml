@@ -54,23 +54,15 @@ jobs:
           cp my-app/target/my-app-1.0-SNAPSHOT.jar /tmp/my-app/
           ls -al /tmp/my-app/
 
-      - name: Upload JAR to EC2 via SSM
+      - name: Upload JAR to EC2 using SSM
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          INSTANCE_ID: i-0839a8d070763f097
         run: |
-          # Create an SSM document with the deployment commands
-          DEPLOY_COMMAND=$(cat <<-EOF
-          sudo mkdir -p /opt/my-app
-          sudo cp /tmp/my-app/my-app-1.0-SNAPSHOT.jar /opt/my-app/
-          sudo systemctl restart my-app
-          EOF
-          )
-          
-          # Run the deployment script using SSM
+          # Copy the JAR file from the GitHub runner to the EC2 instance using SSM
           aws ssm send-command \
+            --instance-ids "i-0839a8d070763f097" \
             --document-name "AWS-RunShellScript" \
-            --targets "Key=instanceids,Values=$INSTANCE_ID" \
-            --parameters 'commands=["'${DEPLOY_COMMAND}'"]' \
-            --comment "Deploying application to EC2 instance"
+            --comment "Deploying application" \
+            --parameters 'commands=["mkdir -p /opt/my-app","aws s3 cp /tmp/my-app/my-app-1.0-SNAPSHOT.jar /opt/my-app/","sudo systemctl restart my-app"]' \
+            --output text
