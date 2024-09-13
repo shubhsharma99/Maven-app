@@ -64,7 +64,8 @@ jobs:
           
           # Encode the command for proper handling in JSON
           ESCAPED_COMMAND=$(echo "$DEPLOY_COMMAND" | sed 's/"/\\"/g')
-          
+
+          # Run the deployment script using SSM
           aws ssm send-command \
             --document-name "AWS-RunShellScript" \
             --targets "Key=instanceids,Values=$INSTANCE_ID" \
