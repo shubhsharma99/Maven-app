@@ -45,9 +45,6 @@ jobs:
         with:
           name: my-app-jar
 
-      - name: List downloaded files
-        run: ls -al
-
       - name: Create temporary directory and copy JAR file
         run: |
           mkdir -p /tmp/my-app
@@ -60,12 +57,13 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           INSTANCE_ID: i-0839a8d070763f097
         run: |
+          # Define the deployment command
           DEPLOY_COMMAND="sudo mkdir -p /opt/my-app && sudo cp /tmp/my-app/my-app-1.0-SNAPSHOT.jar /opt/my-app/ && sudo systemctl restart my-app"
           
-          # Encode the command for proper handling in JSON
+          # Escape special characters for JSON formatting
           ESCAPED_COMMAND=$(echo "$DEPLOY_COMMAND" | sed 's/"/\\"/g')
 
-          # Run the deployment script using SSM
+          # Run the deployment command using AWS SSM
           aws ssm send-command \
             --document-name "AWS-RunShellScript" \
             --targets "Key=instanceids,Values=$INSTANCE_ID" \
