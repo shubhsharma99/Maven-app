@@ -22,20 +22,51 @@ jobs:
           java-version: '11'
           distribution: 'temurin'
 
-      - name: Build with Maven (debug mode)
-        run: mvn clean package -X  # Adding -X for debug mode
+      - name: Build with Maven
+        run: mvn clean package -X  # -X enables Maven's debug mode to provide detailed logs
         working-directory: ./my-app
-
-      - name: Check target directory after build
-        run: ls -al ./my-app/target
-        continue-on-error: true  # Continue even if this fails so we can inspect logs
 
       - name: Run tests with Maven
         run: mvn test
         working-directory: ./my-app
+
+      - name: List target directory
+        run: ls -al ./my-app/target  # Check if the target directory exists
+        continue-on-error: true  # Ensure the workflow continues even if this step fails
 
       - name: Upload JAR artifact
         uses: actions/upload-artifact@v3
         with:
           name: my-app-jar
           path: my-app/target/my-app-1.0-SNAPSHOT.jar
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Download JAR artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: my-app-jar
+
+      - name: List downloaded files
+        run: ls -al my-app/target/
+
+      - name: Create temporary directory and copy JAR file
+        run: |
+          mkdir -p /tmp/my-app
+          cp my-app/target/my-app-1.0-SNAPSHOT.jar /tmp/my-app/
+          ls -al /tmp/my-app/
+
+      - name: Upload JAR to EC2 using SSM
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          # Copy the JAR file from the GitHub runner to the EC2 instance using SSM
+          aws ssm send-command \
+            --instance-ids "i-0839a8d070763f097" \
+            --document-name "AWS-RunShellScript" \
+            --comment "Deploying application" \
+            --parameters 'commands=["mkdir -p /opt/my-app","aws s3 cp /tmp/my-app/my-app-1.0-SNAPSHOT.jar /opt/my-app/","sudo systemctl restart my-app"]' \
+            --output text
