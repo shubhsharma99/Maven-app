@@ -1,4 +1,4 @@
-name: Maven CI/CD Pipeline
+name: Maven CI
 
 on:
   push:
@@ -37,8 +37,32 @@ jobs:
           name: test-results
           path: my-app/target/surefire-reports/
 
+      - name: Upload WAR artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: my-app-war
+          path: my-app/target/hello-world-1.0-SNAPSHOT.war
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Download WAR artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: my-app-war
+
       - name: Deploy to EC2
-        run: |
-          scp -i C:/Users/v/Downloads/shubh1.pem ./my-app/target/hello-world-1.0-SNAPSHOT.war ec2-user@13.201.131.153:/opt/tomcat/webapps
         env:
-          PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          HOST: ${{ secrets.EC2_HOST }}
+          USER: ${{ secrets.EC2_USER }}
+        run: |
+          chmod 600 /tmp/ssh_key.pem
+          echo "$SSH_PRIVATE_KEY" > /tmp/ssh_key.pem
+          scp -i /tmp/ssh_key.pem -o StrictHostKeyChecking=no hello-world-1.0-SNAPSHOT.war $USER@$HOST:/home/$USER
+          ssh -i /tmp/ssh_key.pem -o StrictHostKeyChecking=no $USER@$HOST << 'EOF'
+            sudo systemctl stop tomcat
+            sudo cp /home/$USER/hello-world-1.0-SNAPSHOT.war /opt/tomcat/webapps/
+            sudo systemctl start tomcat
+          EOF
