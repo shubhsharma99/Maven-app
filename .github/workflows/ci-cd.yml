@@ -60,15 +60,10 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           INSTANCE_ID: i-0839a8d070763f097
         run: |
-          DEPLOY_COMMAND=$(cat <<-EOF
-          sudo mkdir -p /opt/my-app
-          sudo cp /tmp/my-app/my-app-1.0-SNAPSHOT.jar /opt/my-app/
-          sudo systemctl restart my-app
-          EOF
-          )
+          DEPLOY_COMMAND="sudo mkdir -p /opt/my-app && sudo cp /tmp/my-app/my-app-1.0-SNAPSHOT.jar /opt/my-app/ && sudo systemctl restart my-app"
           
           aws ssm send-command \
             --document-name "AWS-RunShellScript" \
             --targets "Key=instanceids,Values=$INSTANCE_ID" \
-            --parameters 'commands=["'${DEPLOY_COMMAND}'"]' \
+            --parameters 'commands=["'"$DEPLOY_COMMAND"'"]' \
             --comment "Deploying Maven application to EC2 instance"
