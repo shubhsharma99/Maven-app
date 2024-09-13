@@ -45,16 +45,21 @@ jobs:
         with:
           name: my-app-jar
 
+      - name: List downloaded files
+        run: ls -al my-app/target/
+
+      - name: Create temporary directory and copy JAR file
+        run: |
+          mkdir -p /tmp/my-app
+          cp my-app/target/my-app-1.0-SNAPSHOT.jar /tmp/my-app/
+          ls -al /tmp/my-app/
+
       - name: Upload JAR to EC2 via SSM
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           INSTANCE_ID: i-0839a8d070763f097
         run: |
-          # Create a temporary directory and copy the JAR file
-          mkdir -p /tmp/my-app
-          cp my-app/target/my-app-1.0-SNAPSHOT.jar /tmp/my-app/
-          
           # Create an SSM document with the deployment commands
           DEPLOY_COMMAND=$(cat <<-EOF
           sudo mkdir -p /opt/my-app
