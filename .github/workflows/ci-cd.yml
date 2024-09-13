@@ -36,12 +36,12 @@ jobs:
 
       # Step 5: Debug the project structure to find target directory
       - name: Debug project structure
-        run: find . -type d  # This lists all directories to help locate 'target' folder
+        run: find ./my-app -type d  # This lists all directories to help locate 'target' folder
 
       # Step 6: List the files in the target directory
       # We are using './my-app/target/' to ensure we are accessing the correct path
       - name: List target directory files
-        run: ls -al ./my-app/target/
+        run: ls -al ./my-app/target/ || echo "Target directory not found"
 
       # Step 7: Upload the built JAR file as an artifact
       - name: Upload JAR artifact
@@ -64,6 +64,10 @@ jobs:
       - name: Create temporary directory and copy JAR file
         run: |
           mkdir -p /tmp/my-app
+          # List files in the working directory for debugging
+          ls -al /tmp
+          ls -al ./my-app/target/
+          # Copy the JAR file to the temporary directory
           cp ./my-app/target/my-app-1.0-SNAPSHOT.jar /tmp/my-app/
           ls -al /tmp/my-app/
 
