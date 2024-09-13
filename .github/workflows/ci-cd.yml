@@ -62,8 +62,11 @@ jobs:
         run: |
           DEPLOY_COMMAND="sudo mkdir -p /opt/my-app && sudo cp /tmp/my-app/my-app-1.0-SNAPSHOT.jar /opt/my-app/ && sudo systemctl restart my-app"
           
+          # Encode the command for proper handling in JSON
+          ESCAPED_COMMAND=$(echo "$DEPLOY_COMMAND" | sed 's/"/\\"/g')
+          
           aws ssm send-command \
             --document-name "AWS-RunShellScript" \
             --targets "Key=instanceids,Values=$INSTANCE_ID" \
-            --parameters 'commands=["'"$DEPLOY_COMMAND"'"]' \
+            --parameters "commands=[\"$ESCAPED_COMMAND\"]" \
             --comment "Deploying Maven application to EC2 instance"
